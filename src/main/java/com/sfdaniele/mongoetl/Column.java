@@ -6,19 +6,18 @@ import org.mongodb.morphia.annotations.Id;
 
 /** Holds column information so we can copy it to mysql. */
 class Column {
+  String name;
+  String type;
+  Object value;
 
-  public String name;
-  public String type;
-  public Object value;
-
-  public Column(String name, String type, Object value) {
+  Column(String name, String type, Object value) {
     this.name = name;
     this.type = type;
     this.value = value;
   }
 
-  public static Column from(Field field) {
-    String name = CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, fieldName(field));
+  static Column from(Field field) {
+    String name = columnName(field);
     String type = type(field);
     if (type == null) return null;
     return new Column(name, type, null);
@@ -41,8 +40,9 @@ class Column {
     }
   }
 
-  private static String fieldName(Field field) {
-    return EntityReflector.isSimpleReference(field) ? field.getName() + "_id" : field.getName();
+  private static String columnName(Field field) {
+    String name = EntityReflector.isSimpleReference(field) ? field.getName() + "_id" : field.getName();
+    return CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, name);
   }
 
   @Override

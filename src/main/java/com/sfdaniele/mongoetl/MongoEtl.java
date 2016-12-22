@@ -9,11 +9,15 @@ import javax.sql.DataSource;
 import org.mongodb.morphia.Datastore;
 import org.mongodb.morphia.annotations.Entity;
 
+import static com.google.common.base.CaseFormat.LOWER_CAMEL;
+import static com.google.common.base.CaseFormat.LOWER_UNDERSCORE;
+
 public class MongoEtl {
   private final static int BATCH_SIZE = 1000;
   private final static String DROP_STATEMENT = "DROP TABLE IF EXISTS %s";
   private final static String CREATE_STATEMENT = "CREATE TABLE %s (%s)";
   private final static String INSERT_STATEMENT = "INSERT INTO %s (%s) VALUES %s";
+  private final static String TABLE_NAME_PREFIX = "etl_";
 
   private final MongoQuery mongoQuery;
   private final SqlSession session;
@@ -41,7 +45,7 @@ public class MongoEtl {
   public int etl(List<Class<?>> mongoEntities) {
     int totalAdded = 0;
     for (Class<?> clazz : mongoEntities) {
-      String tableName = "etl_" + clazz.getAnnotation(Entity.class).value();
+      String tableName = tableName(clazz);
 
       session.execute(String.format(DROP_STATEMENT, tableName));
 
@@ -63,6 +67,11 @@ public class MongoEtl {
       } while (!entities.isEmpty());
     }
     return totalAdded;
+  }
+
+  private String tableName(Class<?> clazz) {
+    return TABLE_NAME_PREFIX +
+        LOWER_CAMEL.to(LOWER_UNDERSCORE, clazz.getAnnotation(Entity.class).value());
   }
 
   private void insert(String tableName, List<List<Column>> batch) {
